@@ -60,8 +60,13 @@ var
 begin
   T := TModernTable.Create(PlainTable);
   { Pinned so that a data refresh which silently loses half the file is caught
-    here, rather than as a puzzling resolution change somewhere else. }
-  AssertEquals('mark count of the plain country.tab', 21560, T.Count);
+    here, rather than as a puzzling resolution change somewhere else.
+
+    21560 -> 21564 when the two OK1/OK2 lines from
+    docs/proposals/ctyfiles-ok-license-gap-1993-2005.md were applied to
+    AreaOK1RR.tbl: two lines carrying two marks each.  Any other movement
+    wants explaining before this number is edited. }
+  AssertEquals('mark count of the plain country.tab', 21564, T.Count);
 end;
 
 procedure TSmokeTest.ExpandedTableIsLarger;

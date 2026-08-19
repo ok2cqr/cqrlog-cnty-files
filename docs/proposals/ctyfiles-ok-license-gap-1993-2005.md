@@ -1,8 +1,13 @@
 # Proposal: Czech call areas are unreachable between 1993-01-01 and 2005-04-30
 
-**Status: NOT APPLIED.** This is a data change to `data/dxcc/AreaOK1RR.tbl`,
-written down so it can be applied deliberately. Nothing in `data/` has been
-touched.
+**Status: APPLIED 2026-08-19** to `data/dxcc/AreaOK1RR.tbl`, as a **local
+patch on top of OK1RR's set**.
+
+That last part is the catch: `data/dxcc/` is a wholesale drop-in, so the next
+refresh will silently drop this change. It has to be re-applied by hand until
+OK1RR takes it upstream — see the "Local patches" section of
+[../../data/README.md](../../data/README.md), which lists it, and `tSmoke`,
+whose pinned mark count (21564) fails if it goes missing.
 
 *Moved here from the CQRLOG repository, where the analysis was originally done
 with `tools/logdiff` against the old and new engines side by side. That tool

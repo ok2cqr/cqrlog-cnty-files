@@ -129,18 +129,28 @@ wins, and therefore which country some callsigns get.
 ### Known consequence: rule 1 can defeat finer entries
 
 Because rule 1 counts positions and prefix mode leaves trailing characters free,
-a short pattern with a wildcard can outrank a longer literal one. Czech
-callsigns between 1993-01-01 and 2005-04-30 are the documented case:
+a short pattern with a wildcard can outrank a longer literal one. It is worth
+understanding, because it means an entry can be present in the data and still be
+unreachable.
 
-| mark | positions | matches `OK1AYY`? |
+Czech callsigns are the documented case. For `OK1AYY` on a 1998 date:
+
+| mark | positions | matches? |
 |---|---|---|
 | `OK1` | 3 | yes |
 | `OK[1-7]%` | **4** | yes — consumes `OK1A`, ignores `YY` |
 
-`OK[1-7]%` wins on length, so the call areas `OK1` and `OK2` are unreachable in
-that window and the country string reads "Czech Rep., Special & Contest
-Station". The ADIF is unaffected. This is a **data** problem, not a parser one —
-see [`../docs/proposals/`](../docs/proposals/).
+`OK[1-7]%` wins on length, so the plain `OK1` area entry is unreachable for any
+callsign of four characters or more. `OK[1-7]%` was written for four-character
+contest calls, but nothing anchors its end.
+
+This is a **data** problem, not a parser one — the fix is a finer mark that
+outranks it, not a change to the rule. Two such lines have been added to
+`AreaOK1RR.tbl` for the 1993–2005 window, so Czech callsigns now resolve to
+Bohemia / Morava & Silesia there; see
+[`../docs/proposals/ctyfiles-ok-license-gap-1993-2005.md`](../docs/proposals/ctyfiles-ok-license-gap-1993-2005.md).
+The mechanism above is unchanged and will bite again wherever a wildcard mark
+is left unanchored.
 
 ## 5. Date validity
 

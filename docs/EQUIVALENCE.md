@@ -87,10 +87,20 @@ It is recorded here because the corrected version is what the tests assert.
 it was 16 — `A8OK` and `MR5W` are fixed by newer data. A data gap, not a parser
 one.
 
-**Czech call areas are unreachable between 1993-01-01 and 2005-04-30.** Both
-engines do this identically. Written up in
-[proposals/ctyfiles-ok-license-gap-1993-2005.md](proposals/ctyfiles-ok-license-gap-1993-2005.md);
-not applied, because it belongs upstream with OK1RR.
+**Czech call areas were unreachable between 1993-01-01 and 2005-04-30.** Both
+engines did this identically, on the data as OK1RR ships it — which is what
+makes it a data finding rather than an engine difference. Written up in
+[proposals/ctyfiles-ok-license-gap-1993-2005.md](proposals/ctyfiles-ok-license-gap-1993-2005.md)
+and since applied to `data/dxcc/AreaOK1RR.tbl` as a local patch.
+
+Note what this means for the equivalence figures above: they were measured on
+the **unpatched** data, and they still stand for it. The patch adds two marks
+that outrank an existing one inside that window, so on the patched data the two
+engines still agree with each other: the proposal records a full-log run on a
+patched copy of the tables, `rows=58184 dxcc=0 fields=0 key=0 pattern=0`, made
+while both engines were still available. What does change is the answer itself
+— 890 QSOs in the reference log resolve to a different country string than they
+did before, deliberately.
 
 ## What was not compared
 

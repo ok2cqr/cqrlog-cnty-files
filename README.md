@@ -275,11 +275,13 @@ deliberately:
 
 - The **US-state override** is not ported; `us_states.tab` ships but is unread.
 - `Ambiguous.tbl` is loaded but not yet consumed by the resolver.
-- Czech call areas are unreachable between 1993-01-01 and 2005-04-30. This is a
-  data problem, present in the original engine too, and it is written up with a
-  verified fix in
-  [docs/proposals/](docs/proposals/ctyfiles-ok-license-gap-1993-2005.md). It has
-  not been applied, because the fix belongs upstream with OK1RR.
+- `data/dxcc/` carries **one local patch**: two lines restoring Czech call
+  areas between 1993-01-01 and 2005-04-30, which were unreachable in the
+  upstream set. It belongs upstream with OK1RR, and until it gets there a data
+  refresh will revert it — see
+  [data/README.md](data/README.md) under *Local patches*, and
+  [docs/proposals/](docs/proposals/ctyfiles-ok-license-gap-1993-2005.md) for
+  the reasoning.
 
 ## Licence
 

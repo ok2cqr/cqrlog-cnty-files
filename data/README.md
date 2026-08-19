@@ -73,9 +73,10 @@ no such source here and is simply absent.
 
 ## Refreshing
 
-Unpack the upstream tarball and copy the files in. That is the whole procedure:
-nothing is generated, transformed or normalised, so the files here stay byte
-identical to what OK1RR shipped.
+Unpack the upstream tarball and copy the files in. Nothing is generated,
+transformed or normalised, so the files here stay byte identical to what OK1RR
+shipped — with the single exception listed under **Local patches** below, which
+the copy will revert and which you have to put back.
 
 ```sh
 tar xzf cqrlog-cty260205.tar.gz -C /tmp/cty
@@ -92,8 +93,12 @@ cd parsers/pascal && make test
 ```
 
 `tSmoke` pins the number of marks the tables load to, so a refresh that
-silently loses half a file fails there. Beyond that the suite tests behaviour,
-not data, so it will not tell you which callsigns changed meaning.
+silently loses half a file fails there — and so does one that reverted the
+local patch, since that is 4 marks. Beyond that the suite tests behaviour, not
+data, so it will not tell you which callsigns changed meaning.
+
+If it fails on the mark count, re-apply the patch from **Local patches** and
+run it again before looking any further.
 
 If you want to know that, diff the resolutions before and after:
 
@@ -127,14 +132,30 @@ desynchronises them.
   it, but the statistics are still wrong.
 - After updating country files in CQRLOG, run "Rebuild DXCC statistics".
 
-## A known data issue
+## Local patches
 
-Czech call areas are unreachable between 1993-01-01 and 2005-04-30: a plain OK
-callsign resolves to "Czech Rep., Special & Contest Station" rather than Bohemia
-or Morava & Silesia. The ADIF is correct either way, so DXCC standings are
-unaffected; the country string is not.
+`data/dxcc/` is otherwise a verbatim drop-in, with one deliberate exception.
+**A refresh will silently revert it, so it has to be re-applied by hand.**
 
-This is a data problem, not a parser one — the original CQRLOG engine does it
-identically. Written up with a verified two-line change in
+### 1. Czech call areas, 1993-01-01 to 2005-04-30
+
+Two lines added to `AreaOK1RR.tbl`, immediately after the
+`Czech Republic, Full License` entry:
+
+```
+OK1[A-Z]% OK1[A-JL-NPQS-Z]%%|Czech Republic, Bohemia|EU|-1|50.07N|14.42E|28|15||R|1993/01/01-2005/04/30=503
+OK2[A-Z]% OK2[A-JL-NPQS-Z]%%|Czech Republic, Morava & Silesia|EU|-1|49.20N|16.61E|28|15||R|1993/01/01-2005/04/30=503
+```
+
+Without them a plain OK callsign in that window resolves to "Czech Rep.,
+Special & Contest Station" rather than Bohemia or Morava & Silesia, because a
+shorter wildcard mark outranks the finer area entries and nothing valid before
+2005-05-01 beats it. The ADIF is 503 either way, so DXCC standings were never
+affected — only the country string, which is what the log shows.
+
+Reasoning, evidence and the boundary table are in
 [../docs/proposals/ctyfiles-ok-license-gap-1993-2005.md](../docs/proposals/ctyfiles-ok-license-gap-1993-2005.md).
-**Not applied**, because it belongs upstream.
+It belongs upstream with OK1RR; until it gets there it lives here.
+
+`tSmoke.PlainTableLoads` pins the mark count at 21564, which is 4 higher than
+the unpatched set — so if a refresh drops these lines, `make test` says so.
