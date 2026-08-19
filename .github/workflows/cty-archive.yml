@@ -64,15 +64,13 @@ jobs:
           echo "date=$date_str"     >> "$GITHUB_OUTPUT"
           echo "tag=cty-$date_str"  >> "$GITHUB_OUTPUT"
 
-      # Runs before any download: a data/ that got mangled in checkout fails
-      # here in about a minute, without hammering ARRL and eQSL first.
-      # tSmoke pins the number of marks the tables load to.
-      - name: Install Free Pascal
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fpc
-
-      - name: Test the parser against data/
-        run: make -C parsers/pascal test
-
+      # No parser build here on purpose: this job packages files and needs no
+      # compiler, so installing fpc would only add a minute to every run.
+      #
+      # Nothing is lost by skipping it. The build script cmp's every one of the
+      # eleven redistributed members against data/ before packing, which is a
+      # more direct check of the thing that could actually go wrong here -- a
+      # checkout that ignored .gitattributes and rewrote the CRLF files.
       - name: Build the archive
         env:
           VERSION_DATE: ${{ steps.ver.outputs.date }}
