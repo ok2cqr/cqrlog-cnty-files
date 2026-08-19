@@ -1,0 +1,11 @@
+# Build output
+parsers/pascal/lib/
+parsers/pascal/tests/dxcctests
+parsers/pascal/tools/dxcclookup
+
+# tools/build-tables.sh default output -- derived from data/, never committed
+build/
+
+*.o
+*.ppu
+*.compiled

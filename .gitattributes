@@ -1,0 +1,6 @@
+# The data is a verbatim drop-in of OK1RR's set and must stay byte-identical
+# to what upstream shipped -- some files are CRLF, some LF, and that varies
+# between releases. Never let git normalise them: the parsers ignore every
+# byte below 32, so the mixture is harmless, but a rewritten file would no
+# longer match upstream and every refresh would show spurious changes.
+data/** -text
