@@ -65,7 +65,14 @@ tools/compare-cty-archives.sh OLD NEW               # shrinkage guard; takes .ta
 ```
 
 `.github/workflows/cty-archive.yml` is the same script on `workflow_dispatch`, plus a
-release. Its `dry_run` input builds and validates without publishing.
+GitHub Pages deploy and a release. Its `dry_run` input builds and validates without
+publishing either.
+
+The **Pages** copy is the canonical download — `https://ok2cqr.github.io/cqrlog-cnty-files/{ver.dat,cqrlog-cty.tar.gz}`,
+static files, one `200`, addresses that never change, hard-coded in CQRLOG. Do not
+repoint CQRLOG at `…/releases/latest/download/…`: that answers with two redirects to a
+signed, expiring URL, which the logger's HTTP client cannot be assumed to follow.
+Releases exist for history and per-version notes.
 
 ## Architecture
 

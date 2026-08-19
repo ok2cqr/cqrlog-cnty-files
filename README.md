@@ -243,9 +243,24 @@ reproducible: the same sources and the same `--version-date` give identical
 bytes.
 
 `.github/workflows/cty-archive.yml` runs the same script on demand and publishes
-the result as a release next to a `ver.dat`, mirroring the layout CQRLOG's
-auto-update expects. Run it with `dry_run` first — that produces the artifact
-without publishing anything.
+the result twice: to GitHub Pages, and as a GitHub release. Run it with `dry_run`
+first — that produces the artifact without publishing anything.
+
+**Pages is what a client should fetch from.** The two addresses never change, and
+each is a plain static file served with a single `200`:
+
+```
+https://ok2cqr.github.io/cqrlog-cnty-files/ver.dat
+https://ok2cqr.github.io/cqrlog-cnty-files/cqrlog-cty.tar.gz
+```
+
+That is deliberately the same shape as the `ctyfiles/` directory CQRLOG has
+always fetched from, so the download code needs no redirect handling. The
+release assets carry the same bytes at
+`…/releases/latest/download/cqrlog-cty.tar.gz`, but that address answers with two
+redirects to a signed, expiring URL — fine for a browser or `curl -L`, not
+something to hard-code into a simple HTTP client. Releases are there for history
+and for the per-version notes.
 
 Two deliberate departures from OK1RR's own archive: `MASTER.SCP` is the
 SuperCheckPartial database rather than his hand-curated CW list, and

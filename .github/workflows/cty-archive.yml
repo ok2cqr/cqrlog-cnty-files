@@ -40,6 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write        # create the tag and the release, upload assets
+      pages: write           # enable Pages on first run, stage the site
+      id-token: write        # required by the Pages actions
 
     steps:
       # Default settings on purpose: .gitattributes marks data/** as -text, and
@@ -168,6 +170,46 @@ jobs:
           fi
           echo "Published https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"
 
+      # GitHub Pages is what CQRLOG actually fetches from: a static file served
+      # with one plain 200, no redirect, at an address that never changes.
+      # The release assets sit behind two redirects and a signed, expiring URL,
+      # which a simple HTTP client in the logger cannot be assumed to follow.
+      - name: Configure Pages
+        if: ${{ !inputs.dry_run }}
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Assemble the Pages site
+        if: ${{ !inputs.dry_run }}
+        env:
+          DATE: ${{ steps.ver.outputs.date }}
+        run: |
+          set -eu
+          mkdir -p build/pages
+          cp build/cty/cqrlog-cty.tar.gz build/cty/ver.dat build/pages/
+          # Mirrors the shape of the directory CQRLOG has always fetched from,
+          # so a human landing here sees the same two files a client does.
+          cat > build/pages/index.html <<HTML
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>CQRLOG country files</title>
+          <h1>CQRLOG country files</h1>
+          <p>Version <strong>$DATE</strong>. Country tables by Martin, OK1RR.</p>
+          <ul>
+            <li><a href="cqrlog-cty.tar.gz">cqrlog-cty.tar.gz</a></li>
+            <li><a href="ver.dat">ver.dat</a></li>
+          </ul>
+          <p>Built from
+             <a href="https://github.com/$GITHUB_REPOSITORY">$GITHUB_REPOSITORY</a>.</p>
+          HTML
+
+      - name: Upload Pages artifact
+        if: ${{ !inputs.dry_run }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/pages
+
       - name: Summary
         if: always()
         run: |
@@ -178,4 +220,32 @@ jobs:
             echo '```'
             cat build/cty/manifest.txt
             echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Separate job because deploy-pages requires the github-pages environment.
+  deploy-pages:
+    name: Publish to GitHub Pages
+    needs: build
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Report the stable URLs
+        env:
+          BASE: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          {
+            echo '### Stable URLs'
+            echo ''
+            echo "- ${BASE}ver.dat"
+            echo "- ${BASE}cqrlog-cty.tar.gz"
           } >> "$GITHUB_STEP_SUMMARY"
