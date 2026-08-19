@@ -11,7 +11,17 @@
 #   make clean
 
 FPC      ?= fpc
-FPCFLAGS ?= -O1 -vw -WM11.0
+FPCFLAGS ?= -O1 -vw
+
+# -WM sets the minimum macOS version and exists only in the Darwin compiler;
+# passing it anywhere else makes fpc bail out with "Illegal parameter" before
+# it compiles a line.  Keep it out of the portable flags, or the "any
+# contributor can run this" claim above is false on Linux.
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+FPCFLAGS += -WM11.0
+endif
+
 UNITPATHS = -Fusrc -Futests
 OUTPUT    = -FUlib
 
