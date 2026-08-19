@@ -174,18 +174,22 @@ jobs:
       # with one plain 200, no redirect, at an address that never changes.
       # The release assets sit behind two redirects and a signed, expiring URL,
       # which a simple HTTP client in the logger cannot be assumed to follow.
-      - name: Configure Pages
-        if: ${{ !inputs.dry_run }}
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
+      # No actions/configure-pages here: its outputs are for static site
+      # generators and we use none of them, and its enablement:true fails with
+      # "Resource not accessible by integration" because GITHUB_TOKEN may not
+      # create a Pages site however the permissions are declared. Enabling Pages
+      # is a one-off repository setting; this checks for it and says so.
       - name: Assemble the Pages site
         if: ${{ !inputs.dry_run }}
         env:
           DATE: ${{ steps.ver.outputs.date }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -eu
+          if ! gh api "repos/$GITHUB_REPOSITORY/pages" >/dev/null 2>&1; then
+            echo "::error::GitHub Pages is not enabled. Turn it on once under Settings -> Pages -> Build and deployment -> Source: GitHub Actions, then re-run this workflow. A workflow token is not allowed to do it."
+            exit 1
+          fi
           mkdir -p build/pages
           cp build/cty/cqrlog-cty.tar.gz build/cty/ver.dat build/pages/
           # Mirrors the shape of the directory CQRLOG has always fetched from,
