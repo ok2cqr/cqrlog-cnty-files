@@ -1,0 +1,183 @@
+# Assembles cqrlog-cty.tar.gz and publishes it as a release.
+#
+# Manual only. The heavy lifting lives in tools/build-cty-archive.sh so the
+# whole thing can be run locally without pushing; this file adds only what
+# needs GitHub -- the checkout, the compiler, the previous release, and the
+# publish.
+#
+# See the payload README (packaging/cty/README) for what ends up in the archive
+# and why three of its members are refetched rather than committed.
+
+name: Build country file archive
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build, validate and upload an artifact, but publish no release"
+        type: boolean
+        default: false
+      version_date:
+        description: "Version date, YYYY-MM-DD. Empty means today, UTC."
+        type: string
+        default: ""
+      force:
+        description: "Skip the previous-release shrinkage guard (all other checks still run)"
+        type: boolean
+        default: false
+
+# Least privilege by default; the job below asks for what it actually needs.
+permissions:
+  contents: read
+
+# Two dispatches must not race for the same tag.
+concurrency:
+  group: cty-archive
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # create the tag and the release, upload assets
+
+    steps:
+      # Default settings on purpose: .gitattributes marks data/** as -text, and
+      # a checkout that sets core.autocrlf would rewrite CountryDel.tab,
+      # iota.tbl and ContestName.tab, which are CRLF.
+      - uses: actions/checkout@v4
+
+      - name: Resolve version date
+        id: ver
+        env:
+          VERSION_DATE_INPUT: ${{ inputs.version_date }}
+        run: |
+          set -eu
+          date_str="$VERSION_DATE_INPUT"
+          [ -n "$date_str" ] || date_str=$(date -u +%F)
+          case "$date_str" in
+            [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+            *) echo "::error::version_date must be YYYY-MM-DD, got '$date_str'"; exit 1 ;;
+          esac
+          date -u -d "${date_str}T00:00:00Z" >/dev/null \
+            || { echo "::error::'$date_str' is not a real date"; exit 1; }
+          echo "date=$date_str"     >> "$GITHUB_OUTPUT"
+          echo "tag=cty-$date_str"  >> "$GITHUB_OUTPUT"
+
+      # Runs before any download: a data/ that got mangled in checkout fails
+      # here in about a minute, without hammering ARRL and eQSL first.
+      # tSmoke pins the number of marks the tables load to.
+      - name: Install Free Pascal
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fpc
+
+      - name: Test the parser against data/
+        run: make -C parsers/pascal test
+
+      - name: Build the archive
+        env:
+          VERSION_DATE: ${{ steps.ver.outputs.date }}
+        run: tools/build-cty-archive.sh --version-date "$VERSION_DATE" --out build/cty
+
+      # data/ is a verbatim redistribution; nothing in the build may touch it.
+      - name: Assert data/ is untouched
+        run: |
+          set -eu
+          git diff --quiet -- data/ \
+            || { echo "::error::the build modified data/"; git diff --stat -- data/; exit 1; }
+
+      - name: Check the eQSL export is fresh
+        run: |
+          set -eu
+          stamp=$(sed -n 's/^eqsl_header_date=//p' build/cty/manifest.txt)
+          [ -n "$stamp" ] || { echo "::error::no eqsl_header_date in the manifest"; exit 1; }
+          then_s=$(date -u -d "$stamp" +%s) \
+            || { echo "::error::cannot parse the eQSL header date: $stamp"; exit 1; }
+          age=$(( ( $(date -u +%s) - then_s ) / 86400 ))
+          echo "eQSL export is $age day(s) old ($stamp)"
+          if [ "$age" -gt 30 ]; then
+            echo "::error::eQSL export is $age days old -- their generator has stalled, refusing to publish it as current"
+            exit 1
+          elif [ "$age" -gt 7 ]; then
+            echo "::warning::eQSL export is $age days old"
+          fi
+
+      - name: Fetch the previous release for comparison
+        id: prev
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          set -eu
+          prev=$(gh release list --limit 20 --json tagName,isDraft \
+                 --jq '[.[] | select(.isDraft == false) | .tagName
+                       | select(startswith("cty-"))] | .[0] // ""')
+          if [ -z "$prev" ] || [ "$prev" = "$TAG" ]; then
+            echo "no earlier release to compare against (found: '${prev:-none}')"
+            echo "found=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mkdir -p build/prev
+          gh release download "$prev" -p cqrlog-cty.tar.gz -D build/prev
+          echo "found=$prev" >> "$GITHUB_OUTPUT"
+
+      - name: Compare against the previous release
+        if: steps.prev.outputs.found != ''
+        env:
+          FORCE: ${{ inputs.force && '1' || '0' }}
+        run: |
+          tools/compare-cty-archives.sh \
+            build/prev/cqrlog-cty.tar.gz build/cty/cqrlog-cty.tar.gz
+
+      # always(): a failed validation is worth diagnosing without refetching
+      # six megabytes from ARRL.
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cty-archive-${{ steps.ver.outputs.date }}
+          path: |
+            build/cty/cqrlog-cty.tar.gz
+            build/cty/ver.dat
+            build/cty/manifest.txt
+            build/cty/notes.md
+          if-no-files-found: warn
+
+      # A re-run on the same date refreshes that release rather than creating a
+      # second one: ver.dat IS the version and it is a date, so two releases
+      # dated alike would be ambiguous for anything consuming them.
+      - name: Publish release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.ver.outputs.tag }}
+          DATE: ${{ steps.ver.outputs.date }}
+        run: |
+          set -eu
+          assets='build/cty/cqrlog-cty.tar.gz build/cty/ver.dat'
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::notice::$TAG already exists -- refreshing its assets and notes"
+            # shellcheck disable=SC2086
+            gh release upload "$TAG" $assets --clobber
+            gh release edit "$TAG" \
+              --title "Country files $DATE" \
+              --notes-file build/cty/notes.md --latest
+          else
+            # shellcheck disable=SC2086
+            gh release create "$TAG" $assets \
+              --target "$GITHUB_SHA" \
+              --title "Country files $DATE" \
+              --notes-file build/cty/notes.md --latest
+          fi
+          echo "Published https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summary
+        if: always()
+        run: |
+          set -eu
+          [ -f build/cty/manifest.txt ] || exit 0
+          {
+            echo '### Archive'
+            echo '```'
+            cat build/cty/manifest.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

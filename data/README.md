@@ -65,6 +65,12 @@ no part in resolving a callsign to a country. They are also large and highly
 volatile — a single refresh rewrites tens of thousands of lines. They stay with
 CQRLOG.
 
+Storing them is not the only way to ship them, though.
+`../tools/build-cty-archive.sh` fetches the first three from their live sources
+when it assembles a distributable `cqrlog-cty.tar.gz`, so a complete archive can
+be produced without any of that churn landing in git history. `qslmgr.csv` has
+no such source here and is simply absent.
+
 ## Refreshing
 
 Unpack the upstream tarball and copy the files in. That is the whole procedure:

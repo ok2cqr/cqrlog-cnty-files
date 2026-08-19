@@ -17,7 +17,8 @@ data/          the country files
 spec/          the format and the algorithm, language-neutral
 parsers/
   pascal/        the reference implementation (Free Pascal)
-tools/         build-tables.sh, for feeding CQRLOG itself
+tools/         feeding CQRLOG itself, and building a distributable archive
+packaging/     the README that ships inside that archive
 docs/          how the equivalence was established, and open data issues
 ```
 
@@ -222,7 +223,34 @@ provenance, per-file notes and the rule about replacing all files at once.
 Not included: `lotw1.txt`, `eqsl.txt`, `MASTER.SCP` and `qslmgr.csv`. They are
 LoTW/eQSL membership lists, a super-check-partial list and a QSL manager
 database — none of them take part in resolving a callsign, and each churns tens
-of thousands of lines per refresh. They stay with CQRLOG.
+of thousands of lines per refresh. They stay with CQRLOG. Three of the four are
+fetched at build time instead of being stored — see below.
+
+## Building a country file archive
+
+`tools/build-cty-archive.sh` assembles `cqrlog-cty.tar.gz`, the fifteen-file set
+CQRLOG unpacks into `~/.config/cqrlog/ctyfiles`. Eleven members come straight out
+of `data/`; `lotw1.txt`, `eqsl.txt` and `MASTER.SCP` are fetched from their live
+sources, which is exactly why they need not be committed.
+
+```sh
+tools/build-cty-archive.sh --out build/cty   # GNU tar required; on macOS TAR=gtar
+```
+
+Every member is validated before it is packed, so a truncated download or an
+HTML error page fails the build rather than shipping. The archive is
+reproducible: the same sources and the same `--version-date` give identical
+bytes.
+
+`.github/workflows/cty-archive.yml` runs the same script on demand and publishes
+the result as a release next to a `ver.dat`, mirroring the layout CQRLOG's
+auto-update expects. Run it with `dry_run` first — that produces the artifact
+without publishing anything.
+
+Two deliberate departures from OK1RR's own archive: `MASTER.SCP` is the
+SuperCheckPartial database rather than his hand-curated CW list, and
+`ContestName.tab` is included, which upstream does not ship in the tarball.
+Both are spelled out in `packaging/cty/README`, which travels inside the archive.
 
 ## Status
 

@@ -1,0 +1,144 @@
+Country files README
+====================
+
+The country file set for CQRLOG is distributed in a tar.gz archive with an
+unique name, ie. cqrlog-cty120812.tar.gz. The number (here 120812) denotes
+version number which is the same as the release date.
+
+Contents of the country file set (15 files):
+
+AreaOK1RR.tbl (a file containing call areas, provinces, districts etc.)
+CallResolution.tbl (a file containing call exceptions)
+Country.tab (the main country list)
+CountryDel.tab (a list of deleted countries)
+iota.tbl (the IOTA list)
+Exceptions.tab (a list of two-character appendices which should be ignored,
+     ie. DL1ABC/LH is still Germany, not Norway)
+Ambiguous.tbl (a list of ambiguous prefixes)
+MASTER.SCP (super check partials for the contest module)
+eqsl.txt (list of eQSL AG users)
+lotw1.txt (list of LoTW users)
+sat_name.tab (satellite names list)
+prop_mode.tab (list of supported propagation modes)
+ContestName.tab (ADIF contest id to human readable name)
+us_states.tab (US states list)
+README (this file)
+
+Since version 0.4.0 (2008-06-21) CQRLOG has an auto update option which provides
+date/version country file check at the program startup. We recommend to enable
+this option (Preferences -> Program). If your CQRLOG tends to perform repetitive
+update on every startup, please check timestamp of this files in /ctyfiles
+directory:
+
+CallResolution.tbl
+Country.tab
+AreaOK1RR.tbl
+
+Try to delete file cqrlog-cty.tar.gz from ctyfiles directory, run CQRLOG again
+and confirm auto upgrade. It should help. You can also move all files from the
+'ctyfiles' folder to another directory and run CQRLOG again. Allow to perform
+the update cycle, CQRLOG should then run as usual.
+
+The geographic coordinates using the WGS 84 (World Geodetic System). A Decimal
+Notation is used, NOT (!!!) minutes/seconds!
+
+
+How this archive was assembled
+==============================
+
+This archive is NOT the original OK1RR distribution. It is built by
+
+    https://github.com/ok2cqr/cqrlog-cnty-files
+
+Eleven files are Martin OK1RR's, redistributed byte for byte. Three are
+refetched from their live sources every time the archive is built:
+
+  lotw1.txt    https://lotw.arrl.org/lotw-user-activity.csv
+               (first column of each row, CRLF line endings)
+
+  eqsl.txt     https://www.eqsl.cc/qslcard/DownloadedFiles/AGMemberList.txt
+               (verbatim, including its header line)
+
+  MASTER.SCP   https://www.supercheckpartial.com/downloads/MASTER.SCP
+               (verbatim)
+
+Fetched @@VERSION_DATE@@.
+
+Two differences from the original set you should know about:
+
+  * MASTER.SCP here is the SuperCheckPartial database (roughly 50 000 calls),
+    NOT the hand-curated FOC/CWops/HSC "active on CW" list (roughly 5 700
+    calls) that OK1RR's own archives carry. The two overlap by only about
+    2 900 calls. If you relied on the CW list, keep your existing copy.
+
+  * ContestName.tab is included here. It is part of the CQRLOG data set but
+    OK1RR does not ship it inside the tarball.
+
+All files unpack with mode 0644 and carry the version date as their timestamp.
+The original archive shipped most files 0755, which is a nuisance for plain
+data files.
+
+The country tables are Martin OK1RR's work (martin@ok1rr.com), redistributed
+with credit as CQRLOG has always redistributed them. Corrections to the DATA
+belong upstream with him, not with the repository above.
+
+
+NOTES:
+=====
+There are several operations which are not accepted for DXCC. Along with known
+'ungood' ones there are stations permanently or very frequently operating aboard
+a ship (ship museums, they using very usual call signs like K2AA or DF0MV).
+Other known not accepted ones are operations from drifting ice, artic ski
+expeditions and similar event stations. Its 'bad' DXCC status cannot be easily
+verified, anyway such stations are not from rare countries so we expect (and
+recommend) to use another station for an award application.
+
+Manual country files update
+===========================
+
+1. Unpack and copy all files into the /home/~/.config/cqrlog/ctyfiles folder.
+The purpose of this folder is to store the files only, it is not bound to the
+CQRLOG and does not affect its function.
+
+2. Start the CQRLOG and select the 'Show QSO list' from the 'File' item in the
+main menu. You can go there also using shortcut Ctrl-O.
+
+3. If you are already in the QSO list, go there to menu. Click the 'File' item,
+then the 'Import' option. Choose the DXCC data option, located at lowest
+position. A dialog appears, navigate to your /home/~/.config/cqrlog/ctyfiles
+folder. Click the 'Open' button. All files are read and if the import completes,
+a small window with the progress bar disappears. The update is finished.
+
+Note:
+=====
+While opening your new country files [see 3.], you dont need to open a
+particular files. The 'Open' button starts a procedure which reads ALL files in
+the /ctyfiles folder.
+
+Important:
+==========
+
+Don't attempt to create your own country files. This can result in program crash
+or incorrect statistics. If you find an incorrectly resolved station (no matter
+if current log or and old record), send a not directly to me: martin@ok1rr.com.
+
+Replace ALWAYS all files in the /ctyfiles folder! If you leave an older file and
+try only a single file from the new version, the resulting tables will became
+out-of-sync which ends with incorrect statistics. Also, the logger may not work
+properly.
+
+NEW LOG FILE - you can create a new log file where you can import ADIF format
+QSO data. If you do this, import the most fresh country files set BEFORE any
+ADIF QSO data import!
+
+*********************************************************************
+* If you update your contry files or upgrade the CQRLOG version,    *
+* ALWAYS perform the 'Rebuild DXCC statistics' which is accessible  *
+* from the QSO list screen.                                         *
+*********************************************************************
+
+BACKUP your data often! BACKUP your log file at the end of ANY session!
+All what you need to backup and store in a safe place is the folder
+/home/~/.config/cqrlog/database.
+
+(~ means your user name)

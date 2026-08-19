@@ -4,3 +4,6 @@
 # byte below 32, so the mixture is harmless, but a rewritten file would no
 # longer match upstream and every refresh would show spurious changes.
 data/** -text
+
+# Payload for cqrlog-cty.tar.gz -- LF like upstream's README, on every platform.
+packaging/cty/README text eol=lf

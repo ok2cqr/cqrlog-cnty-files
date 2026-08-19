@@ -188,3 +188,8 @@ data set but play no part in resolving a callsign to a country — they are LoTW
 and eQSL membership lists, a super-check-partial list and a QSL manager
 database. They are not in this repository. `data/extra/` holds the small
 lookup tables that CQRLOG needs and the parser does not.
+
+An implementation of this specification never reads any of them. They are noted
+only because a complete CQRLOG archive contains them, and this repository's
+packaging script fetches three of the four from their live sources when it
+builds one.
